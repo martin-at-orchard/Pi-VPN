@@ -34,26 +34,27 @@ pi@IP-ADDRESS's password: raspberry
 ```
 11. Change the default password.
 ```
-pi@raspberrypi:~ $ passwd
+$ passwd
 Change password for pi.
 Current password: raspberry
 New password: NEW-PASSWORD
 Retype new password: NEW-PASSWORD
 passwd: password updated successfully
-pi@raspberrypi:~ $
+$
 ```
 12. Update the Raspberry Pi Software.
 ```
-sudo apt update
-sudo apt upgrade -y
+$ sudo apt update
+$ sudo apt upgrade -y
 ```
-13. Change the host name by editing the configuration file and replacing raspberrypi with your new host name **pivpn** for example.
+13. Change the host name by editing the configuration files and replacing raspberrypi with your new host name **pivpn** for example.
 ```
-pi@raspberrypi:~ $ sudo nano /etc/hostname
+$ sudo nano /etc/hostname
+$ sudo nano /etc/hosts
 ```
 14. Reboot the pi.
 ```
-sudo shutdown -r now
+$ sudo shutdown -r now
 ```
 
 ## WireGuard Installation
@@ -62,44 +63,42 @@ This setup is based on a blog post from [The Engineer's Workshop](https://engine
 
 1. Add the Debian distro to the Raspberry Pi apt source.
 ```
-echo "deb http://deb.debian.org/debian/ unstable main" | sudo tee --append /etc/apt/sources.list
+$ echo "deb http://deb.debian.org/debian/ unstable main" | sudo tee --append /etc/apt/sources.list
 ```
 2. Install the Debian distro keys.
 ```
-sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC
-sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
+$ sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC
+$ sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
 ```
 3. Prevent Pi from using the Debian distro for normal Raspbian packages.
 ```
-sudo sh -c 'printf "Package: *\nPin: release a=unstable\nPin-Priority: 90\n" > /etc/apt/preferences.d/limit-unstable'
+$ sudo sh -c 'printf "Package: *\nPin: release a=unstable\nPin-Priority: 90\n" > /etc/apt/preferences.d/limit-unstable'
 ```
 4. Update the package list.
 ```
-sudo apt-get update
+$ sudo apt-get update
 ```
 5. Install WireGuard.
 ```
-sudo apt install wireguard
+$ sudo apt install wireguard
 ```
 6. Wait for the installation to finish (could take some time).
 7. Generate security keys to ensure that only valid users can connect (the client keys need to be generated for as many clients as needed). **NOTE From this point on you will be root**.
 ```
-sudo su
-cd /etc/wireguard
-unmask 077
-wg genkey | tee server_private_key | wg pubkey > server_public_key
-wg genkey | tee client_private_key_1 | wg pubkey > client_public_key_1
-wg genkey | tee client_private_key_2 | wg pubkey > client_public_key_2
+$ sudo su
+$ cd /etc/wireguard
+$ unmask 077
+$ wg genkey | tee server_private_key | wg pubkey > server_public_key
+$ wg genkey | tee client_private_key_1 | wg pubkey > client_public_key_1
+$ wg genkey | tee client_private_key_2 | wg pubkey > client_public_key_2
 ```
 8. Retrieve the keys generated above as they will be needed during editing the configuration file.
 ```
-cat server_private_key
-cat client_public_key_1
-cat client_public_key_2
+$ cat filename
 ```
 9. Create the configuration file.
 ```
-nano wg0.conf
+$ nano wg0.conf
 ```
 10. Add the following configuration changing the IP addresses and the keys as required.
 ```
@@ -122,20 +121,24 @@ AllowedIPs = 10.253.3.3/32
 ```
 11. Enable IP Forwarding on the Server by uncommenting the line **net.ipv4.ip_forward=1** in the sysctl.conf file
 ```
-nano /etc/sysctl.conf
+$ nano /etc/sysctl.conf
 ```
 12. Start up WireGuard
 ```
-systemctl enable wg-quick@wg0
-chown -R root:root /etc/wireguard/
-chmod -R og-rwx /etc/wireguard/*
+$ systemctl enable wg-quick@wg0
+$ chown -R root:root /etc/wireguard/
+$ chmod -R og-rwx /etc/wireguard/*
 ```
 13. Set up the Pi to use a static IP address by editing the **dhcpcd.conf** file.
 ```
-sudo nano /etc/hostname
+$ sudo nano /etc/dhcpcd.conf
 ```
 14. Modify the following section with the desired values.
 ```
+# Inform the DHCP server of our hostname for DDNS.
+PUT-HOSTNAME-HERE
+
+# Example static IP configuration:
 interface eth0
 static ip_address=STATIC-IP-ADDRESS/24
 #static ip6_address=fd51:42f8:caae:d92e::ff/64
@@ -144,7 +147,7 @@ static domain_name_servers=1.1.1.1 8.8.8.8
 ```
 15. Reboot the Raspberry pi
 ```
-shutdown -r now
+$ shutdown -r now
 ```
 
 ## Port forward the router to the Raspberry Pi
