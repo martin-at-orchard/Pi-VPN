@@ -28,31 +28,57 @@ Install Raspian Buster Lite on the SD Card.
    1. Windows - Use [PuTTY](https://www.putty.org/).
    1. Mac - Use Terminal.
 1. Use Userid: **pi** and Password: **raspberry**.
-```script
-login as: pi
-pi@IP-ADDRESS's password: raspberry
-```
-11. Change the default password.
-```
-$ passwd
-Change password for pi.
-Current password: raspberry
-New password: NEW-PASSWORD
-Retype new password: NEW-PASSWORD
-passwd: password updated successfully
-$
-```
-12. Update the Raspberry Pi Software.
-```
-$ sudo apt update
-$ sudo apt upgrade -y
-```
-13. Change the host name by editing the configuration files and replacing raspberrypi with your new host name **pivpn** for example.
-```
-$ sudo nano /etc/hostname
-$ sudo nano /etc/hosts
-```
-14. Reboot the pi.
+   ```script
+   login as: pi
+   pi@IP-ADDRESS's password: raspberry
+   ```
+1. Mount the /tmp, /var/tmp, /var/log directories into RAM (optional, but will reduce the ware on the micro SD card, but the log files will be lost on reboot and the available RAM will be reduced by 230 MB).
+   ```shell
+   sudo nano /etc/fstab
+   ```
+   1. Once editing the file enter the following at the bottom of the file.
+   ```shell
+   /tmpfs /tmp     tmpfs defaults,noatime,nosuid,size=100m           0 0
+   /tmpfs /var/tmp tmpfs defaults,noatime,nosuid,size=30m            0 0
+   /tmpfs /var/log tmpfs defaults,noatime,nosuid,size=100m,mode=0755 0 0
+   ```
+   1. Press **^o** then **Enter** then **^x** to save and exit.
+
+1. Configure the Raspberry Pi
+   ```
+   $ sudo raspi-config
+   ```
+   1. Change User Password - Change password for the 'pi' user
+   1. Network Options - Configure network settings
+      1. Hostname - Set the visible name for this Pi on a network
+      1. Wireless LAN - Enter SSID and passphrase (**OPTIONAL**)
+   1. Localization Options - Set up language and regional settings to match your location
+      1. Change Locale - Set up language and regional settings to match your location
+      1. Change Time Zone - Set up timezone to match your location
+      1. Change Keyboard Layout - Set the keyboard layout to match your keyboard
+   1. Finish to leave the configuration, but **DON'T** reboot just yet.
+1. Edit the pi user .bashrc file.
+   ```shell
+   nano ~/.bashrc
+   ```
+   1. Enter the above aliases to avoid making mistakes.
+      ```shell
+      alias rm='rm -i'
+      alias cp='cp -i'
+      alias mv='mv -i'
+      ```
+1. **Note** Optionally set a Static IP address
+   ```script
+   sudo nano /etc/dhcpcd.conf
+   ```
+   1. Scroll down to the commented out section Example static IP configuration and modify it accordingly
+    
+1. Update the Raspberry Pi Software.
+   ```
+   $ sudo apt update
+   $ sudo apt upgrade -y
+   ```
+1. Reboot the pi.
 ```
 $ sudo shutdown -r now
 ```
@@ -65,42 +91,42 @@ This setup is based on a blog post from [The Engineer's Workshop](https://engine
 ```
 $ echo "deb http://deb.debian.org/debian/ unstable main" | sudo tee --append /etc/apt/sources.list
 ```
-2. Install the Debian distro keys.
+1. Install the Debian distro keys.
 ```
 $ sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC
 $ sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
 ```
-3. Prevent Pi from using the Debian distro for normal Raspbian packages.
+1. Prevent Pi from using the Debian distro for normal Raspbian packages.
 ```
 $ sudo sh -c 'printf "Package: *\nPin: release a=unstable\nPin-Priority: 90\n" > /etc/apt/preferences.d/limit-unstable'
 ```
-4. Update the package list.
+1. Update the package list.
 ```
 $ sudo apt-get update
 ```
-5. Install WireGuard.
+1. Install WireGuard.
 ```
 $ sudo apt install wireguard
 ```
-6. Wait for the installation to finish (could take some time).
-7. Generate security keys to ensure that only valid users can connect (the client keys need to be generated for as many clients as needed). **NOTE From this point on you will be root**.
+1. Wait for the installation to finish (could take some time).
+1. Generate security keys to ensure that only valid users can connect (the client keys need to be generated for as many clients as needed). **NOTE From this point on you will be root**.
 ```
 $ sudo su
-$ cd /etc/wireguard
-$ unmask 077
-$ wg genkey | tee server_private_key | wg pubkey > server_public_key
-$ wg genkey | tee client_private_key_1 | wg pubkey > client_public_key_1
-$ wg genkey | tee client_private_key_2 | wg pubkey > client_public_key_2
+# cd /etc/wireguard
+# umask 077
+# wg genkey | tee server_private_key | wg pubkey > server_public_key
+# wg genkey | tee client_private_key_1 | wg pubkey > client_public_key_1
+# wg genkey | tee client_private_key_2 | wg pubkey > client_public_key_2
 ```
-8. Retrieve the keys generated above as they will be needed during editing the configuration file.
+1. Retrieve the keys generated above as they will be needed during editing the configuration file.
 ```
 $ cat filename
 ```
-9. Create the configuration file.
+1. Create the configuration file.
 ```
 $ nano wg0.conf
 ```
-10. Add the following configuration changing the IP addresses and the keys as required.
+1. Add the following configuration changing the IP addresses and the keys as required.
 ```
 [Interface]
 Address = 10.253.3.1/24
@@ -119,33 +145,17 @@ AllowedIPs = 10.253.3.2/32
 PublicKey = <insert client_public_key_2>
 AllowedIPs = 10.253.3.3/32
 ```
-11. Enable IP Forwarding on the Server by uncommenting the line **net.ipv4.ip_forward=1** in the sysctl.conf file
+1. Enable IP Forwarding on the Server by uncommenting the line **net.ipv4.ip_forward=1** in the sysctl.conf file
 ```
 $ nano /etc/sysctl.conf
 ```
-12. Start up WireGuard
+1. Start up WireGuard
 ```
 $ systemctl enable wg-quick@wg0
 $ chown -R root:root /etc/wireguard/
 $ chmod -R og-rwx /etc/wireguard/*
 ```
-13. Set up the Pi to use a static IP address by editing the **dhcpcd.conf** file.
-```
-$ sudo nano /etc/dhcpcd.conf
-```
-14. Modify the following section with the desired values.
-```
-# Inform the DHCP server of our hostname for DDNS.
-PUT-HOSTNAME-HERE
-
-# Example static IP configuration:
-interface eth0
-static ip_address=STATIC-IP-ADDRESS/24
-#static ip6_address=fd51:42f8:caae:d92e::ff/64
-static routers=ROUTER-IP-ADDRESS
-static domain_name_servers=1.1.1.1 8.8.8.8
-```
-15. Reboot the Raspberry pi
+1. Reboot the Raspberry pi
 ```
 $ shutdown -r now
 ```
