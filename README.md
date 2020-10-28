@@ -120,11 +120,11 @@ $ sudo su
 ```
 1. Retrieve the keys generated above as they will be needed during editing the configuration file.
 ```
-$ cat filename
+# cat filename
 ```
 1. Create the configuration file.
 ```
-$ nano wg0.conf
+# nano wg0.conf
 ```
 1. Add the following configuration changing the IP addresses and the keys as required.
 ```
@@ -147,17 +147,32 @@ AllowedIPs = 10.253.3.3/32
 ```
 1. Enable IP Forwarding on the Server by uncommenting the line **net.ipv4.ip_forward=1** in the sysctl.conf file
 ```
-$ nano /etc/sysctl.conf
+# nano /etc/sysctl.conf
 ```
 1. Start up WireGuard
 ```
-$ systemctl enable wg-quick@wg0
-$ chown -R root:root /etc/wireguard/
-$ chmod -R og-rwx /etc/wireguard/*
+# chown -R root:root /etc/wireguard/
+# chmod -R og-rwx /etc/wireguard/*
+# systemctl enable wg-quick@wg0
+# systemctl start wg-quick@wg0
 ```
+1. Check that WireGuard has started up
+   ```
+   # systemctl status wg-quick@wg0
+   ```
+   1. If there are errors do the following:
+      ```
+      # apt install raspberrypi-kernel-headers
+      # dpkg-reconfigure wireguard-dkms
+      ```
+   1. Start up WIreGuard and check that there are no errors
+      ```
+      # systemctl start wg-quick@wg0
+      # systemctl status wg-quick@wg0
+      ```
 1. Reboot the Raspberry pi
 ```
-$ shutdown -r now
+# shutdown -r now
 ```
 
 ## Port forward the router to the Raspberry Pi
