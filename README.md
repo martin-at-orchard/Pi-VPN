@@ -193,7 +193,7 @@ DNS = 1.1.1.1
 
 [Peer]
 PublicKey = <insert server_public_key>
-Endpoint = <insert vpn_server_address>:51900
+Endpoint = <insert vpn_server_external_address>:<insert vpn_server_external_port>
 AllowedIPs = 0.0.0.0/0, ::/0
 ```
 
